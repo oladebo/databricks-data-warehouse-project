@@ -1,1 +1,74 @@
 
+- This pipeline converts raw retail data into trusted, analytics-ready insights through structured layers, enabling better and faster business decisions.
+
+- Using the Medallion Architecture (Bronze, Silver, Gold layers) on databricsks. It processes raw retail data into clean, structured, and analytics-ready datasets for business intelligence and reporting.
+
+# Bronze Layer
+- Import Required Library
+- Define schema
+- Data Collection
+- Data Preprocessing i.e Data Injection
+
+
+from pyspark.sql.types import StructType, StructField, StringType
+
+
+orders_schema = StructType([
+    StructField("order_id", StringType(), True),
+    StructField("order_date", StringType(), True),
+    StructField("customer_id", StringType(), True),
+    StructField("product_id", StringType(), True),
+    StructField("product_name", StringType(), True),
+    StructField("category", StringType(), True),
+    StructField("quantity", StringType(), True),
+    StructField("unit_price", StringType(), True),
+    StructField("discount", StringType(), True),
+    StructField("total_amount", StringType(), True),
+    StructField("payment_method", StringType(), True),
+    StructField("store_location", StringType(), True),
+    StructField("order_status", StringType(), True)
+])
+
+customer_schema = StructType([
+    StructField("customer_id", StringType(), True),
+    StructField("customer_name", StringType(), True),
+    StructField("email", StringType(), True),
+    StructField("phone", StringType(), True),
+    StructField("gender", StringType(), True),
+    StructField("date_of_birth", StringType(), True),
+    StructField("city", StringType(), True),
+    StructField("state", StringType(), True),
+    StructField("registration_date", StringType(), True),
+    StructField("loyalty_points", StringType(), True),
+    StructField("status", StringType(), True)
+])
+
+
+
+
+orders_bronze_df = spark.read.format('csv').option("header", "true").schema(orders_schema).load("/Volumes/re_project/raw_data/raw_file/retail_orders_messy.csv")
+
+customers_bronze_df = spark.read.format("csv") \
+    .option("header", "true") \
+    .schema(customer_schema) \
+    .load("/Volumes/re_project/raw_data/raw_file/retail_customers_messy.csv")
+
+
+orders_bronze_df.display()
+customers_bronze_df.display()
+
+
+from pyspark.sql.functions import current_timestamp
+
+
+orders_bronze_df = orders_bronze_df.withColumn('ingest_timestamp', current_timestamp())
+customers_bronze_df = customers_bronze_df.withColumn('ingest_timestamp',current_timestamp())
+
+
+
+orders_bronze_df.display()
+customers_bronze_df.display()
+
+
+orders_bronze_df.write.format("delta").mode("overwrite").saveAsTable('re_project.bronze.bronze_orders')
+customers_bronze_df.write.format("delta").mode("overwrite").saveAsTable('re_project.bronze.bronze_customers')
